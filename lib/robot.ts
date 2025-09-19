@@ -2,12 +2,6 @@ export type Orientation = "N" | "E" | "S" | "W";
 export type Command = "L" | "R" | "F";
 
 const orientations: Orientation[] = ["N", "E", "S", "W"];
-const moveDelta: Record<Orientation, [number, number]> = {
-  N: [0, 1],
-  E: [1, 0],
-  S: [0, -1],
-  W: [-1, 0],
-};
 
 function isIntegerInRange(val: string, min: number, max: number): boolean {
   const num = Number(val);
@@ -58,10 +52,8 @@ function turn(orientation: Orientation, command: Command): Orientation {
   const idx = orientations.indexOf(orientation);
   if (command === "L") {
     return orientations[(idx + 3) % 4];
-  } else if (command === "R") {
-    return orientations[(idx + 1) % 4];
   }
-  return orientation;
+  return orientations[(idx + 1) % 4];
 }
 
 type RobotState = {
@@ -78,7 +70,7 @@ type CommandHandler = (
   scented: Set<string>
 ) => void;
 
-const commandHandlers: Record<Command, CommandHandler> = {
+const commandHandlers: { [key in Command]: CommandHandler } = {
   L: (state) => {
     state.orientation = turn(state.orientation, "L");
   },
@@ -86,50 +78,82 @@ const commandHandlers: Record<Command, CommandHandler> = {
     state.orientation = turn(state.orientation, "R");
   },
   F: (state, maxX, maxY, scented) => {
-    const [dx, dy] = moveDelta[state.orientation];
-    const newX = state.x + dx;
-    const newY = state.y + dy;
+    let positionKey = `${state.x} ${state.y} ${state.orientation}`;
+    let newX = state.x;
+    let newY = state.y;
+
+    // Move based on orientation
+    switch (state.orientation) {
+      case 'N':
+        newY += 1;
+        break;
+      case 'E':
+        newX += 1;
+        break;
+      case 'S':
+        newY -= 1;
+        break;
+      case 'W':
+        newX -= 1;
+        break;
+    }
+
+    // Check if the robot goes out of bounds
     if (newX < 0 || newX > maxX || newY < 0 || newY > maxY) {
-      const scentKey = `${state.x},${state.y},${state.orientation}`;
-      if (!scented.has(scentKey)) {
-        state.lost = true;
-        scented.add(scentKey);
+      if (!scented.has(positionKey)) {
+        state.lost = true; // Mark as lost
+        scented.add(positionKey); // Add to scented positions
       }
-      // If scented, ignore this instruction
-    } else {
+    } else if (!scented.has(positionKey)) {
+      // Move only if the current position is not scented
       state.x = newX;
       state.y = newY;
     }
-  },
-  // Add new commands here as needed
+  }
 };
 
 export function processRobots(input: string): string[] {
+  // Split the input into lines, trim whitespace, and filter out any empty lines
   const lines = input.split("\n").map(line => line.trim()).filter(Boolean);
+
+  // Check if there are enough lines for processing
   if (lines.length < 3) return [];
+
+  // Parse the maximum coordinates from the first line
   const [maxX, maxY] = lines[0].split(/\s+/).map(Number);
   const results: string[] = [];
+
+  // Initialize the scented set to track positions where robots have been lost
   const scented = new Set<string>();
 
+  // Iterate through the robot position and instruction lines
   for (let i = 1; i < lines.length; i += 2) {
     const [x, y, orientation] = lines[i].split(/\s+/);
+
+    // Create a new state for each robot
     const state: RobotState = {
       x: Number(x),
       y: Number(y),
       orientation: orientation as Orientation,
       lost: false,
     };
+
+    // Split the instructions into an array of commands
     const instructions = lines[i + 1].split("") as Command[];
 
+    // Process each command for the robot
     for (const cmd of instructions) {
-      if (state.lost) break;
-      const handler = commandHandlers[cmd];
-      if (handler) handler(state, maxX, maxY, scented);
+      if (state.lost) break; // Stop processing if the robot is already lost
+      const handler = commandHandlers[cmd]; // Get the command handler
+      if (handler) handler(state, maxX, maxY, scented); // Execute the command if valid
       // Unknown commands are ignored
     }
+
+    // Store the final position and status of the robot
     results.push(
       `${state.x} ${state.y} ${state.orientation}${state.lost ? " LOST" : ""}`
     );
   }
-  return results;
+
+  return results; // Return the results array containing the final states of all robots
 }

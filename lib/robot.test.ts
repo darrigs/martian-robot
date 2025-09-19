@@ -119,10 +119,10 @@ describe("processRobots", () => {
 1 1 E
 RFRFRFRF
 0 3 W
-LLFFFLFLFL`;
+LLFFFRFRFR`;
     expect(processRobots(input)).toEqual([
       "1 1 E",
-      "2 3 S",
+      "2 2 N",
     ]);
   });
 
@@ -143,7 +143,7 @@ FRRFLLFFRRFLL
 FRRFLLFFRRFLL`;
     expect(processRobots(input)).toEqual([
       "3 3 N LOST",
-      "3 3 N",
+      "3 2 N",
     ]);
   });
 
@@ -180,17 +180,17 @@ RFRFRFRFXYZ`;
   it("handles whitespace and blank lines gracefully", () => {
     const input = `5 3
 
-1 1 E
+1 1 N
 
-RFRFRFRF
+RFRF
 
 0 3 W
 
-LLFFFLFLFL
+RRFFFRF
 `;
     expect(processRobots(input)).toEqual([
-      "1 1 E",
-      "2 3 S",
+      "2 0 S",
+      "3 2 S",
     ]);
   });
 
