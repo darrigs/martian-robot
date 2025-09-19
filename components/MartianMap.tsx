@@ -14,7 +14,11 @@ export default function MartianMap() {
   const handleInputChange = (value: string) => {
     setInput(value);
 
-    const lines = value.split("\n").map(line => line.trim()).filter(line => line.length > 0);
+    const lines = value
+      .split("\n")
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
     if (lines.length === 0) {
       setError(null);
       setResults([]);
@@ -37,12 +41,12 @@ export default function MartianMap() {
   return (
     <div>
       <UserInput value={input} onChange={handleInputChange} error={error} />
-      {results.length > 0 && (
+      {results.length > 0 && !error && (
         <div>
           <h3>Final Robot Positions:</h3>
           <ul>
             {results.map((res, idx) => (
-              <li key={idx}>{res}</li>
+              <li key={idx} data-testid="robot-result">{res}</li>
             ))}
           </ul>
         </div>
